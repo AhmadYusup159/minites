@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Buku;
 use App\Models\Kategori;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
 
 class BukuController extends Controller
 {
@@ -23,7 +25,7 @@ class BukuController extends Controller
         $request->validate([
             'judul' => 'required|string|max:255',
             'deskripsi' => 'required',
-            'gambar' => 'nullable|image',
+            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'kategori_id' => 'required|exists:kategoris,id',
         ]);
 
@@ -38,20 +40,23 @@ class BukuController extends Controller
 
         return response()->json(['message' => 'Buku berhasil ditambahkan']);
     }
-
     public function update(Request $request, $id)
     {
+        $buku = Buku::findOrFail($id);
+
         $request->validate([
             'judul' => 'required|string|max:255',
             'deskripsi' => 'required',
-            'gambar' => 'nullable|image',
+            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'kategori_id' => 'required|exists:kategoris,id',
         ]);
 
-        $buku = Buku::find($id);
-        $gambar = Buku::uploadGambar($request);
-        if ($gambar) {
-            $buku->gambar = $gambar;
+        if ($request->hasFile('gambar')) {
+            if ($buku->gambar) {
+                Buku::hapusGambar($buku->gambar);
+            }
+
+            $buku->gambar = Buku::uploadGambar($request);
         }
 
         $buku->update([
@@ -62,10 +67,19 @@ class BukuController extends Controller
 
         return response()->json(['message' => 'Buku berhasil diperbarui']);
     }
-
     public function destroy($id)
     {
-        Buku::find($id)->delete();
-        return response()->json(['message' => 'Buku berhasil dihapus']);
+        $buku = Buku::find($id);
+        if ($buku) {
+            if ($buku->gambar) {
+                Storage::disk('public')->delete($buku->gambar);
+            }
+
+            $buku->delete();
+
+            return response()->json(['message' => 'Buku berhasil dihapus']);
+        }
+
+        return response()->json(['message' => 'Buku tidak ditemukan'], 404);
     }
 }

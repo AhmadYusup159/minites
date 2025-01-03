@@ -19,7 +19,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::resource('kategori', KategoriController::class);
     Route::resource('buku', BukuController::class);
-    Route::get('/kategori', [KategoriController::class, 'index'])->name('kategori.index');
 });
 
 require __DIR__ . '/auth.php';

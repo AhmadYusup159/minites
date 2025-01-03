@@ -2,12 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-
-namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\File;
 
 class Buku extends Model
 {
@@ -23,11 +20,17 @@ class Buku extends Model
     public static function uploadGambar($request)
     {
         if ($request->hasFile('gambar')) {
-            $file = $request->file('gambar');
-            $filename = time() . '.' . $file->getClientOriginalExtension();
-            $file->storeAs('public/images', $filename);
-            return $filename;
+            return $request->file('gambar')->store('images', 'public');
         }
         return null;
+    }
+
+    public static function hapusGambar($gambar)
+    {
+        $gambarPath = public_path('storage/' . $gambar);
+        if ($gambar && File::exists($gambarPath)) {
+            return File::delete($gambarPath);
+        }
+        return false;
     }
 }
