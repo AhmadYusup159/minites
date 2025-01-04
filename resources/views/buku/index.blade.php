@@ -1,6 +1,12 @@
 @include('template.header')
 @include('template.sidebar')
 
+<div id="loadingIndicator"
+    style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+</div>
 <div class="container-fluid">
     <button class="btn btn-sm btn-primary mb-3" data-toggle="modal" data-target="#tambah_buku"><i
             class="fas fa-plus fa-sm"></i> Tambah Buku</button>
@@ -32,36 +38,43 @@
             </tr>
         </thead>
         <tbody id="bukuList">
-            @foreach ($bukus as $index => $buku)
-                <tr id="buku_{{ $buku->id }}">
-                    <td class="text-center">{{ $index + 1 }}</td>
-                    <td>{{ $buku->judul }}</td>
-                    <td>{{ $buku->deskripsi }}</td>
-                    <td>{{ $buku->kategori->nama_kategori }}</td>
-                    <td class="text-center">
-                        @if ($buku->gambar)
-                            <img src="{{ asset('storage/' . $buku->gambar) }}" alt="{{ $buku->judul }}" width="50"
-                                height="50">
-                        @else
-                            <span class="text-muted">Tidak ada gambar</span>
-                        @endif
-                    </td>
-                    <td class="text-center">
-                        <button class="btn btn-primary btn-sm editBuku" data-id="{{ $buku->id }}"
-                            data-judul="{{ $buku->judul }}" data-deskripsi="{{ $buku->deskripsi }}"
-                            data-kategori="{{ $buku->kategori_id }}" data-toggle="modal" data-target="#edit_buku"><i
-                                class="fa fa-edit"></i> Edit</button>
-                        <button class="btn btn-danger btn-sm deleteBuku" data-id="{{ $buku->id }}"
-                            data-toggle="modal" data-target="#deleteModal"><i class="fa fa-trash"></i> Hapus</button>
-
-                    </td>
+            @if ($bukus->isEmpty())
+                <tr>
+                    <td colspan="6" class="text-center">Data tidak ada</td>
                 </tr>
-            @endforeach
+            @else
+                @foreach ($bukus as $index => $buku)
+                    <tr id="buku_{{ $buku->id }}">
+                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td>{{ $buku->judul }}</td>
+                        <td>{{ $buku->deskripsi }}</td>
+                        <td>{{ $buku->kategori->nama_kategori }}</td>
+                        <td class="text-center">
+                            @if ($buku->gambar)
+                                <img src="{{ asset('storage/' . $buku->gambar) }}" alt="{{ $buku->judul }}"
+                                    width="50" height="50">
+                            @else
+                                <span class="text-muted">Tidak ada gambar</span>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-primary btn-sm editBuku" data-id="{{ $buku->id }}"
+                                data-judul="{{ $buku->judul }}" data-deskripsi="{{ $buku->deskripsi }}"
+                                data-kategori="{{ $buku->kategori_id }}" data-toggle="modal"
+                                data-target="#edit_buku"><i class="fa fa-edit"></i> Edit</button>
+                            <button class="btn btn-danger btn-sm deleteBuku" data-id="{{ $buku->id }}"
+                                data-toggle="modal" data-target="#deleteModal"><i class="fa fa-trash"></i>
+                                Hapus</button>
+
+                        </td>
+                    </tr>
+                @endforeach
+            @endif
         </tbody>
     </table>
 </div>
 
-<!-- Modal Tambah Buku -->
+
 <div class="modal fade" id="tambah_buku" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
     aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -105,8 +118,7 @@
     </div>
 </div>
 
-<!-- Modal Edit Buku -->
-<!-- Modal Edit Buku -->
+
 <div class="modal fade" id="edit_buku" data-id="" tabindex="-1" role="dialog"
     aria-labelledby="exampleModalLabel" aria-hidden="true">
 
@@ -121,7 +133,7 @@
             <div class="modal-body">
                 <form id="formEditBuku" method="post" enctype="multipart/form-data">
                     @csrf
-                    @method('PUT') <!-- Form Method PUT -->
+                    @method('PUT')
                     <div class="form-group">
                         <label for="edit_judul">Judul</label>
                         <input type="text" class="form-control" id="edit_judul" name="judul" required>
@@ -154,8 +166,7 @@
 </div>
 
 
-<!-- Modal Hapus Buku -->
-<!-- Modal Hapus Buku -->
+
 <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
     aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -189,6 +200,14 @@
             $('#toastNotification').toast('show');
         }
 
+        function showLoading() {
+            $('#loadingIndicator').show();
+        }
+
+        function hideLoading() {
+            $('#loadingIndicator').hide();
+        }
+
         $('#formBuku').submit(function(e) {
             e.preventDefault();
             var fileInput = $('#gambar')[0];
@@ -206,6 +225,7 @@
             }
 
             var formData = new FormData(this);
+            showLoading();
             $.ajax({
                 url: '{{ route('buku.store') }}',
                 method: 'POST',
@@ -213,6 +233,7 @@
                 processData: false,
                 contentType: false,
                 success: function(response) {
+                    hideLoading();
                     $('#tambah_buku').modal('hide');
                     showToast(response.message);
                     setTimeout(function() {
@@ -220,6 +241,7 @@
                     }, 1000);
                 },
                 error: function(xhr, status, error) {
+                    hideLoading();
                     showToast('Terjadi kesalahan');
                 }
             });
@@ -242,7 +264,7 @@
                 showToast('Format file tidak valid. Harus berupa file gambar (jpeg, png, jpg, gif).');
                 return;
             }
-
+            showLoading();
             $.ajax({
                 url: `/buku/${bukuId}`,
                 method: 'POST',
@@ -253,6 +275,7 @@
                     'X-HTTP-Method-Override': 'PUT'
                 },
                 success: function(response) {
+                    hideLoading();
                     $('#edit_buku').modal('hide');
                     showToast(response.message);
                     setTimeout(function() {
@@ -260,6 +283,7 @@
                     }, 1000);
                 },
                 error: function(xhr, status, error) {
+                    hideLoading();
                     showToast('Terjadi kesalahan saat mengupdate buku.');
                 },
             });
@@ -283,6 +307,7 @@
         });
 
         $('#confirmDelete').on('click', function() {
+            showLoading();
             $.ajax({
                 url: `/buku/${bukuIdToDelete}`,
                 method: 'DELETE',
@@ -290,11 +315,13 @@
                     _token: '{{ csrf_token() }}'
                 },
                 success: function(response) {
+                    hideLoading();
                     $('#deleteModal').modal('hide');
                     showToast(response.message);
                     $(`#buku_${bukuIdToDelete}`).remove();
                 },
                 error: function(xhr, status, error) {
+                    hideLoading();
                     showToast('Terjadi kesalahan saat menghapus buku.');
                 }
             });
