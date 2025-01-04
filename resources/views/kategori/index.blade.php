@@ -1,5 +1,11 @@
 @include('template.header')
 @include('template.sidebar')
+<div id="loadingIndicator"
+    style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+</div>
 
 <div class="container-fluid">
     <button class="btn btn-sm btn-primary mb-3" data-toggle="modal" data-target="#tambah_kategori"><i
@@ -27,23 +33,29 @@
             </tr>
         </thead>
         <tbody id="kategoriList">
-            @foreach ($kategoris as $index => $kategori)
-                <tr id="kategori_{{ $kategori->id }}">
-                    <td class="text-center">{{ $index + 1 }}</td>
-                    <td>{{ $kategori->nama_kategori }}</td>
-                    <td class="text-center">
-                        <button class="btn btn-primary btn-sm editKategori" data-id="{{ $kategori->id }}"
-                            data-nama="{{ $kategori->nama_kategori }}" data-toggle="modal"
-                            data-target="#edit_kategori"><i class="fa fa-edit"></i> Edit</button>
-                        <button class="btn btn-danger btn-sm deleteKategori" data-id="{{ $kategori->id }}"
-                            data-toggle="modal" data-target="#deleteModal">
-                            <i class="fa fa-trash"></i> Hapus
-                        </button>
-
-                    </td>
+            @if ($kategoris->isEmpty())
+                <tr>
+                    <td colspan="3" class="text-center">Data tidak ada</td>
                 </tr>
-            @endforeach
+            @else
+                @foreach ($kategoris as $index => $kategori)
+                    <tr id="kategori_{{ $kategori->id }}">
+                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td>{{ $kategori->nama_kategori }}</td>
+                        <td class="text-center">
+                            <button class="btn btn-primary btn-sm editKategori" data-id="{{ $kategori->id }}"
+                                data-nama="{{ $kategori->nama_kategori }}" data-toggle="modal"
+                                data-target="#edit_kategori"><i class="fa fa-edit"></i> Edit</button>
+                            <button class="btn btn-danger btn-sm deleteKategori" data-id="{{ $kategori->id }}"
+                                data-toggle="modal" data-target="#deleteModal">
+                                <i class="fa fa-trash"></i> Hapus
+                            </button>
+                        </td>
+                    </tr>
+                @endforeach
+            @endif
         </tbody>
+
     </table>
 </div>
 
@@ -135,20 +147,31 @@
             $('#toastNotification').toast('show');
         }
 
+        function showLoading() {
+            $('#loadingIndicator').show();
+        }
+
+        function hideLoading() {
+            $('#loadingIndicator').hide();
+        }
+
         $('#formKategori').submit(function(e) {
             e.preventDefault();
             var formData = $(this).serialize();
+            showLoading();
             $.ajax({
                 url: '{{ route('kategori.store') }}',
                 method: 'POST',
                 data: formData,
                 success: function(response) {
+                    hideLoading();
                     showToast(response.message);
                     setTimeout(function() {
                         location.reload();
                     }, 1000);
                 },
                 error: function() {
+                    hideLoading();
                     showToast('Terjadi kesalahan');
                 }
             });
@@ -165,17 +188,20 @@
             e.preventDefault();
             var formData = $(this).serialize();
             var actionUrl = $(this).attr('action');
+            showLoading();
             $.ajax({
                 url: actionUrl,
                 method: 'PUT',
                 data: formData,
                 success: function(response) {
+                    hideLoading();
                     showToast(response.message);
                     setTimeout(function() {
                         location.reload();
                     }, 1000);
                 },
                 error: function() {
+                    hideLoading();
                     showToast('Terjadi kesalahan');
                 }
             });
@@ -187,6 +213,7 @@
         });
 
         $('#confirmDelete').click(function() {
+            showLoading();
             $.ajax({
                 url: '/kategori/' + kategoriId,
                 method: 'DELETE',
@@ -194,6 +221,7 @@
                     _token: '{{ csrf_token() }}'
                 },
                 success: function(response) {
+                    hideLoading();
                     showToast(response.message);
                     setTimeout(function() {
                         location.reload();
@@ -201,6 +229,7 @@
                     $('#deleteModal').modal('hide');
                 },
                 error: function() {
+                    hideLoading();
                     showToast('Terjadi kesalahan');
                     $('#deleteModal').modal('hide');
                 }
