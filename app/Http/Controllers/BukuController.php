@@ -10,13 +10,22 @@ use Illuminate\Support\Facades\Storage;
 
 class BukuController extends Controller
 {
+
     public function index(Request $request)
     {
-        $bukus = Buku::when($request->kategori_id, function ($query) use ($request) {
-            return $query->where('kategori_id', $request->kategori_id);
-        })->get();
-
+        $query = Buku::query();
         $kategoris = Kategori::all();
+
+        if ($request->has('kategori_id') && $request->kategori_id) {
+            $query->where('kategori_id', $request->kategori_id);
+        }
+
+        $bukus = $query->with('kategori')->get();
+
+        if ($request->ajax()) {
+            return view('buku.partial_list', compact('bukus', 'kategoris'));
+        }
+
         return view('buku.index', compact('bukus', 'kategoris'));
     }
 

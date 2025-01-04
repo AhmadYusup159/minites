@@ -8,6 +8,15 @@
     </div>
 </div>
 <div class="container-fluid">
+    <div class="form-group">
+        <label for="filter_kategori">Filter berdasarkan Kategori</label>
+        <select class="form-control" id="filter_kategori" name="kategori_id">
+            <option value="">Semua Kategori</option>
+            @foreach ($kategoris as $kategori)
+                <option value="{{ $kategori->id }}">{{ $kategori->nama_kategori }}</option>
+            @endforeach
+        </select>
+    </div>
     <button class="btn btn-sm btn-primary mb-3" data-toggle="modal" data-target="#tambah_buku"><i
             class="fas fa-plus fa-sm"></i> Tambah Buku</button>
     <h2 class="mb-4">Daftar Buku</h2>
@@ -65,7 +74,6 @@
                             <button class="btn btn-danger btn-sm deleteBuku" data-id="{{ $buku->id }}"
                                 data-toggle="modal" data-target="#deleteModal"><i class="fa fa-trash"></i>
                                 Hapus</button>
-
                         </td>
                     </tr>
                 @endforeach
@@ -323,6 +331,29 @@
                 error: function(xhr, status, error) {
                     hideLoading();
                     showToast('Terjadi kesalahan saat menghapus buku.');
+                }
+            });
+        });
+        $('#filter_kategori').change(function() {
+            var kategoriId = $(this).val();
+            var url = '{{ route('buku.index') }}';
+            if (kategoriId) {
+                url += '?kategori_id=' + kategoriId;
+            }
+
+            showLoading();
+
+            $.ajax({
+                url: url,
+                method: 'GET',
+                success: function(response) {
+                    hideLoading();
+
+                    $('#bukuList').html(response);
+                },
+                error: function(xhr, status, error) {
+                    hideLoading();
+                    showToast('Terjadi kesalahan saat memuat data.');
                 }
             });
         });
